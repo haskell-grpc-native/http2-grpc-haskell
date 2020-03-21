@@ -95,12 +95,19 @@ grpcService compressions services app = \req rep -> do
                               , Handler $ \(e::SomeException) -> 
                                  modifyGRPCStatus r req (GRPCStatus INTERNAL $ ByteString.pack $ show e)
                               ]
-            in (rep $ responseStream status200 hdrs200 grpcHandler)
+            in (rep $ responseStream status200 (hdrs200 req) grpcHandler)
         Nothing ->
             app req rep
   where
-    hdrs200 = [
+    bestCompression req   = lookupEncoding req compressions
+    pickedCompression req = fromMaybe (Encoding uncompressed) (bestCompression req)
+
+    hopefulDecompression req = lookupDecoding req compressions
+    pickedDecompression req  = fromMaybe (Decoding uncompressed) (hopefulDecompression req)
+
+    hdrs200 req = [
         ("content-type", grpcContentTypeHV)
+      , ("grpc-encoding", grpcCompressionHV (_getEncodingCompression $ pickedCompression req))
       , ("trailer", CI.original grpcStatusH)
       , ("trailer", CI.original grpcMessageH)
       ]
@@ -108,14 +115,8 @@ grpcService compressions services app = \req rep -> do
     lookupHandler p plainHandlers = grpcWaiHandler <$>
         List.find (\(ServiceHandler rpcPath _) -> rpcPath == p) plainHandlers
     doHandle r handler req write flush = do
-        let bestCompression = lookupEncoding req compressions
-        let pickedCompression = fromMaybe (Encoding uncompressed) bestCompression
-
-        let hopefulDecompression = lookupDecoding req compressions
-        let pickedDecompression = fromMaybe (Decoding uncompressed) hopefulDecompression
-
         putStrLn "running handler"
-        _ <- handler pickedDecompression pickedCompression req write flush
+        _ <- handler (pickedDecompression req) (pickedCompression req) req write flush
         putStrLn "setting GRPC status"
         modifyGRPCStatus r req (GRPCStatus OK "WAI handler ended.")
 
