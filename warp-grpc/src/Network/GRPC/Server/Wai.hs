@@ -115,9 +115,7 @@ grpcService compressions services app = \req rep -> do
     lookupHandler p plainHandlers = grpcWaiHandler <$>
         List.find (\(ServiceHandler rpcPath _) -> rpcPath == p) plainHandlers
     doHandle r handler req write flush = do
-        putStrLn "running handler"
         _ <- handler (pickedDecompression req) (pickedCompression req) req write flush
-        putStrLn "setting GRPC status"
         modifyGRPCStatus r req (GRPCStatus OK "WAI handler ended.")
 
 #if MIN_VERSION_warp(3,3,0)
