@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6b8490732f6b8b92312b3d51b0bbd4ccda7081b339c78f7346f5d017c7470535
+-- hash: 59e86b4638bab931cb9948900fd08b2b735376fb44120e9889d1af96262ce663
 
 name:           examples
 version:        0.4.0.1
@@ -28,7 +28,11 @@ source-repository head
 
 library
   exposed-modules:
+      ArithClient
+      ArithServer
       Example
+      Proto.Protos.Calcs
+      Proto.Protos.Calcs_Fields
       Proto.Protos.Grpcbin
       Proto.Protos.Grpcbin_Fields
   other-modules:
@@ -52,4 +56,7 @@ library
     , proto-lens
     , proto-lens-runtime
     , unliftio-core >=0.1 && <0.3
+    , warp
+    , warp-grpc
+    , warp-tls
   default-language: Haskell2010

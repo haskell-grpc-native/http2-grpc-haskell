@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package calcs;
+
+service Arithmetic {
+  rpc Add(CalcNumbers) returns (CalcNumber) {}
+}
+
+message CalcNumbers {
+    repeated CalcNumber values = 1;
+  }
+
+message CalcNumber {
+  uint32 code = 1;
+}
+  
