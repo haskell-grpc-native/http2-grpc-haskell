@@ -1,0 +1,100 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+jobs:
+  linux-cabal:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        ghc: ['8.8', '8.10']
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/cache@v1
+      name: Cache ~/.cabal/packages
+      with:
+        path: ~/.cabal/packages
+        key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-packages
+    - uses: actions/cache@v1
+      name: Cache ~/.cabal/store
+      with:
+        path: ~/.cabal/store
+        key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-store
+    - uses: actions/cache@v1
+      name: Cache dist-newstyle
+      with:
+        path: dist-newstyle
+        key: ${{ runner.os }}-${{ matrix.ghc }}-dist-newstyle
+    - uses: actions/setup-haskell@v1
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: '3.0'
+    - name: Update package database
+      run: |
+        cabal update
+    - name: Build
+      run: |
+        cabal build all
+    - name: Test
+      run: |
+        cabal test all
+
+
+  linux-stack:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        stack-yaml: ['stack-nightly.yaml', 'stack-16.yaml']
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/cache@v1
+      name: Cache ~/.stack
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-${{ matrix.stack-yaml }}-stack-home
+    - uses: actions/cache@v1
+      name: Cache .stack-work
+      with:
+        path: .stack-work
+        key: ${{ runner.os }}-${{ matrix.stack-yaml }}-stack-work
+    - name: Install stack
+      run: which stack || curl -sSL https://get.haskellstack.org/ | sh
+    - name: Install GHC
+      run: stack setup --stack-yaml ${{ matrix.stack-yaml }}
+    - name: Build
+      run: |
+        stack build --stack-yaml ${{ matrix.stack-yaml }} --no-interleaved-output
+    - name: Test
+      run: |
+        stack test --stack-yaml ${{ matrix.stack-yaml }}
+
+  macos-stack:
+    runs-on: macOS-latest
+    strategy:
+      matrix:
+        stack-yaml: ['stack-nightly.yaml', 'stack-16.yaml']
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/cache@v1
+      name: Cache ~/.stack
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-${{ matrix.stack-yaml }}-stack-home
+    - uses: actions/cache@v1
+      name: Cache .stack-work
+      with:
+        path: .stack-work
+        key: ${{ runner.os }}-${{ matrix.stack-yaml }}-stack-work
+    - name: Install stack
+      run: which stack || curl -sSL https://get.haskellstack.org/ | sh
+    - name: Install GHC
+      run: stack setup --stack-yaml ${{ matrix.stack-yaml }}
+    - name: Build
+      run: |
+        stack build --stack-yaml ${{ matrix.stack-yaml }} --no-interleaved-output
+    - name: Test
+      run: |
+        stack test --stack-yaml ${{ matrix.stack-yaml }}
