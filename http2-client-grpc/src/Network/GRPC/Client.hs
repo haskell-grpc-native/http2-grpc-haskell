@@ -98,6 +98,10 @@ import Network.HTTP2
 import Network.HPACK
 import Network.HTTP2.Client hiding (next)
 import Network.HTTP2.Client.Helpers
+import Control.Monad (when)
+import Data.Bifunctor (first)
+import Data.Either.Combinators (maybeToRight)
+import Control.Applicative ((<|>))
 
 type CIHeaderList = [(CI ByteString, ByteString)]
 
@@ -125,26 +129,49 @@ throwOnPushPromise _ _ _ _ _ = lift $ throwIO UnallowedPushPromiseReceived
 
 -- | Wait for an RPC reply.
 waitReply
-  :: (GRPCOutput r o)
+  :: forall r o.(GRPCOutput r o)
   => r -> Decoding -> Http2Stream -> IncomingFlowControl
   -> ClientIO (RawReply o)
 waitReply rpc decoding stream flowControl =
     format . fromStreamResult <$> waitStream stream flowControl throwOnPushPromise
   where
+    decompress :: Compression
     decompress = _getDecodingCompression decoding
+
+    -- | According to https://github.com/grpc/grpc/blob/v1.36.2/doc/http-grpc-status-mapping.md
+    synthesizeGRPCStatus :: CIHeaderList -> Maybe CIHeaderList -> Either String GRPCStatus
+    synthesizeGRPCStatus hdrs trls = do
+      let maybeHttpStatus = lookup ":status" hdrs <|> (lookup ":status" =<< trls)
+      httpStatus <- maybeToRight "Niether GRPC status nor HTTP status found" maybeHttpStatus
+      let msg = "HTTP Status " <> httpStatus
+      Right $ case httpStatus of
+        "400" -> GRPCStatus INTERNAL msg
+        "401" -> GRPCStatus UNAUTHENTICATED msg
+        "403" -> GRPCStatus PERMISSION_DENIED msg
+        "404" -> GRPCStatus UNIMPLEMENTED msg
+        "429" -> GRPCStatus UNAVAILABLE msg
+        "502" -> GRPCStatus UNAVAILABLE msg
+        "503" -> GRPCStatus UNAVAILABLE msg
+        "504" -> GRPCStatus UNAVAILABLE msg
+        _ -> GRPCStatus UNKNOWN msg
+
+    format :: Either ErrorCode (HeaderList, ByteString, Maybe HeaderList) -> Either ErrorCode (CIHeaderList, Maybe CIHeaderList, Either String o)
     format rsp = do
        (hdrs, dat, trls) <- rsp
        let hdrs2 = headerstoCIHeaders hdrs
        let trls2 = fmap headerstoCIHeaders trls
-       let res =
-             -- presence of a message indicate an error
-             -- TODO: double check this is true in general
-             case lookup grpcMessageH hdrs2 of
-               Nothing     -> fromDecoder $ pushEndOfInput
-                                          $ flip pushChunk dat
-                                          $ decodeOutput rpc decompress
-               Just errMsg -> Left $ ByteString.unpack errMsg
+       let res = do
+             (GRPCStatus statusCode statusMsg) <-
+               either (\_ -> synthesizeGRPCStatus hdrs2 trls2) Right $
+                 readTrailers =<< maybeToRight (InvalidGRPCStatus []) trls2
+             when (statusCode /= OK) $
+               -- TODO: These errors are useful at the application level so
+               -- ideally they shouldn't be stringified yet.
+               Left $ "GRPC status indicates failure: status-code=" <> show statusCode <> ", status-message=" <> show statusMsg
 
+             fromDecoder $ pushEndOfInput
+                         $ flip pushChunk dat
+                         $ decodeOutput rpc decompress
        return (hdrs2, trls2, res)
 
 headerstoCIHeaders :: HeaderList -> CIHeaderList
