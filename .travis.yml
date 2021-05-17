@@ -24,6 +24,7 @@ before_install:
 install:
 # Build dependencies
 - stack --no-terminal --install-ghc test --only-dependencies --stack-yaml stack-nightly.yaml
+- stack --no-terminal --install-ghc test --only-dependencies --stack-yaml stack-17.yaml
 - stack --no-terminal --install-ghc test --only-dependencies --stack-yaml stack-16.yaml
 - stack --no-terminal --install-ghc test --only-dependencies --stack-yaml stack-15.yaml
 - stack --no-terminal --install-ghc test --only-dependencies --stack-yaml stack-14.yaml
@@ -33,6 +34,7 @@ install:
 script:
 # Build the package, its tests, and its docs and run the tests
 - stack --no-terminal test --haddock --no-haddock-deps --stack-yaml stack-nightly.yaml
+- stack --no-terminal test --haddock --no-haddock-deps --stack-yaml stack-17.yaml
 - stack --no-terminal test --haddock --no-haddock-deps --stack-yaml stack-16.yaml
 - stack --no-terminal test --haddock --no-haddock-deps --stack-yaml stack-15.yaml
 - stack --no-terminal test --haddock --no-haddock-deps --stack-yaml stack-14.yaml

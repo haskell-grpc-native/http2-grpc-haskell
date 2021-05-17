@@ -1,11 +1,13 @@
-resolver: nightly-2020-06-12
+resolver: nightly-2021-05-10
 packages:
-- http2-grpc-types
-- http2-grpc-proto-lens
-- http2-grpc-proto3-wire
-- warp-grpc
-- http2-client-grpc
+  - http2-client-grpc
+  - http2-grpc-proto-lens
+  - http2-grpc-proto3-wire
+  - http2-grpc-types
+  - warp-grpc
 extra-deps:
-- proto3-wire-1.1.0
-- http2-client-0.10.0.0
+  - http2-2.0.6
+  - http2-client-0.10.0.0
+  - proto3-wire-1.1.0
+  - warp-3.3.14
 allow-newer: true
