@@ -149,6 +149,7 @@ trailers (GRPCStatus s msg) =
     if ByteString.null msg then [status] else [status, message]
   where
     status = (grpcStatusH, trailerForStatusCode s)
+    -- TODO: This should be encoded to percent-encoding
     message = (grpcMessageH, msg)
 
 -- | In case a server replies with a gRPC status/message pair un-understood by this library.
@@ -163,6 +164,7 @@ readTrailers pairs = maybe (Left $ InvalidGRPCStatus pairs) Right $ do
     status <- statusCodeForTrailer =<< lookup grpcStatusH pairs
     return $ GRPCStatus status message
   where
+    -- TODO: This should be decoded from percent-encoding
     message = fromMaybe "" (lookup grpcMessageH pairs)
 
 -- | A class to represent RPC information.
