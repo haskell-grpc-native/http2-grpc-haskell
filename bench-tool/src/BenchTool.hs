@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports #-}
 
 module BenchTool where
 
@@ -29,7 +30,7 @@ import qualified Network.GRPC.Client.Helpers as Client
 import Network.GRPC.HTTP2.Encoding as Encoding
 import qualified Network.GRPC.HTTP2.ProtoLens as ProtoLens
 import Network.GRPC.Server as Server
-import qualified Network.HTTP2.Client as Client
+import qualified "http2-client" Network.HTTP2.Client as Client
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Handler.WarpTLS as WarpTLS
 import Options.Generic

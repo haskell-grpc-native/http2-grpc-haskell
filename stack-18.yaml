@@ -8,9 +8,7 @@ packages:
   - http2-client-grpc
   - bench-tool
 extra-deps:
-  - http2-2.0.6
   - http2-client-0.10.0.0
   - proto-lens-0.7.0.0
   - proto-lens-runtime-0.7.0.0
   - proto3-wire-1.0.0
-  - warp-3.3.14

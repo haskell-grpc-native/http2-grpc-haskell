@@ -6,8 +6,6 @@ packages:
   - http2-grpc-types
   - warp-grpc
 extra-deps:
-  - http2-2.0.6
   - http2-client-0.10.0.0
   - proto3-wire-1.1.0
-  - warp-3.3.14
 allow-newer: true
