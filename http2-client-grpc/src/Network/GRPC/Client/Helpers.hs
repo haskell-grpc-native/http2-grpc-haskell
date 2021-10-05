@@ -235,11 +235,11 @@ rawGeneralStream
   -- ^ An initialized client.
   -> a
   -- ^ An initial state for the incoming loop.
-  -> (a -> IncomingEvent o a -> ClientIO a)
+  -> (a -> IncomingEvent o -> ClientIO a)
   -- ^ A state-passing function for the incoming loop.
   -> b
   -- ^ An initial state for the outgoing loop.
-  -> (b -> ClientIO (b, OutgoingEvent i b))
+  -> (b -> ClientIO (b, OutgoingEvent i))
   -- ^ A state-passing function for the ougoing loop.
   -> ClientIO (Either TooMuchConcurrency (a,b))
 rawGeneralStream rpc (GrpcClient client authority headers timeout compression _) v0 handler w0 next =

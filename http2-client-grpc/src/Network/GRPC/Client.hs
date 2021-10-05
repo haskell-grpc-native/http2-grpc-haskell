@@ -60,6 +60,7 @@ module Network.GRPC.Client (
   , streamRequest
   , steppedBiDiStream
   , generalHandler
+  , explicitHandler
   , CompressMode(..)
   , StreamDone(..)
   , BiDiStep(..)
@@ -99,6 +100,7 @@ import Network.HTTP2
 import Network.HPACK
 import "http2-client" Network.HTTP2.Client hiding (next)
 import Network.HTTP2.Client.Helpers
+import Data.IORef
 
 type CIHeaderList = [(CI ByteString, ByteString)]
 
@@ -412,7 +414,7 @@ newtype InvalidParse = InvalidParse String deriving Show
 instance Exception InvalidParse where
 
 -- | An event for the incoming loop of 'generalHandler'.
-data IncomingEvent o a =
+data IncomingEvent o =
     Headers HeaderList
   -- ^ The server sent some initial metadata with the headers.
   | RecvMessage o
@@ -423,7 +425,7 @@ data IncomingEvent o a =
   -- ^ Something went wrong (the loop stops).
 
 -- | An event for the outgoing loop of 'generalHandler'.
-data OutgoingEvent i b =
+data OutgoingEvent i =
     Finalize
   -- ^ The client is done with the RPC (the loop stops).
   | SendMessage CompressMode i
@@ -440,64 +442,104 @@ data OutgoingEvent i b =
 -- One loop accepts and chunks messages from the HTTP2 stream, then return events
 -- and stops on Trailers or Invalid. The other loop waits for messages to send to
 -- the server or finalize and returns.
-generalHandler 
+generalHandler
   :: (GRPCInput r i, GRPCOutput r o)
   => r
   -- ^ RPC to call.
   -> a
   -- ^ An initial state for the incoming loop.
-  -> (a -> IncomingEvent o a -> ClientIO a)
+  -> (a -> IncomingEvent o -> ClientIO a)
   -- ^ A state-passing function for the incoming loop.
   -> b
   -- ^ An initial state for the outgoing loop.
-  -> (b -> ClientIO (b, OutgoingEvent i b))
+  -> (b -> ClientIO (b, OutgoingEvent i))
   -- ^ A state-passing function for the outgoing loop.
   -> RPCCall r (a,b)
-generalHandler rpc v0 handle w0 next = RPCCall rpc $ \conn stream isfc osfc encoding decoding ->
-    go conn stream isfc osfc encoding decoding
+generalHandler rpc v0 handle w0 next =
+    explicitHandler rpc go
   where
-    go conn stream isfc osfc encoding decoding =
-        concurrently (incomingLoop Nothing newDecoder v0) (outGoingLoop w0)
+    go getIncoming sendOutgoing =
+        concurrently (incomingLoop v0) (outGoingLoop w0)
       where
-        ocfc = _outgoingFlowControl conn
-        newDecoder = decodeOutput rpc decompress
-        decompress = _getDecodingCompression decoding
         outGoingLoop v1 = do
              (v2, event) <- next v1
              case event of
                  Finalize -> do
-                    sendData conn stream setEndStream ""
+                    sendOutgoing event
                     return v2
-                 SendMessage doCompress msg -> do
+                 SendMessage{} -> do
+                    sendOutgoing event
+                    outGoingLoop v2
+        incomingLoop v1 =
+            getIncoming >>= \case
+                Nothing -> return v1
+                Just event -> do
+                    handle v1 event >>= incomingLoop
+
+explicitHandler
+  :: (GRPCInput r i, GRPCOutput r o)
+  => r
+  -- ^ RPC to call.
+  -> (ClientIO (Maybe (IncomingEvent o)) -> (OutgoingEvent i -> ClientIO ()) -> ClientIO a)
+  -> RPCCall r a
+explicitHandler rpc act = RPCCall rpc go
+  where
+    go conn stream isfc osfc encoding decoding = do
+        receivedHeaders <- liftIO $ newIORef False
+        decoderVar <- liftIO $ newIORef newDecoder
+        gotTrailers <- liftIO $ newIORef False
+        act (getIncoming receivedHeaders gotTrailers decoderVar) sendOutgoing
+      where
+        ocfc = _outgoingFlowControl conn
+        newDecoder = decodeOutput rpc decompress
+        decompress = _getDecodingCompression decoding
+        sendOutgoing event = do
+            case event of
+                Finalize -> do
+                   sendData conn stream setEndStream ""
+                SendMessage doCompress msg -> do
                     let compress = case doCompress of
                             Compressed -> _getEncodingCompression encoding
                             Uncompressed -> uncompressed
                     sendSingleMessage rpc msg (Encoding compress) id conn ocfc stream osfc
-                    outGoingLoop v2
-        incomingLoop Nothing decode v1 =
-                _waitEvent stream >>= \case
-                    StreamHeadersEvent _ hdrs ->
-                       handle v1 (Headers hdrs) >>= incomingLoop (Just hdrs) decode
-                    _ ->
-                       handle v1 (Invalid $ toException $ InvalidState "no headers")
-        incomingLoop jhdrs decode v1 =
-            _waitEvent stream >>= \case
-                StreamHeadersEvent _ hdrs ->
-                    handle v1 (Trailers hdrs)
-                StreamDataEvent _ dat -> do
-                    liftIO $ _addCredit isfc (ByteString.length dat)
-                    _ <- liftIO $ _consumeCredit isfc (ByteString.length dat)
-                    _ <- _updateWindow isfc
-                    case pushChunk decode dat of
-                        Done unusedDat _ (Right val) ->
-                            handle v1 (RecvMessage val) >>= incomingLoop jhdrs (pushChunk newDecoder unusedDat)
-                        partial@(Partial _) ->
-                            incomingLoop jhdrs partial v1
-                        Done _ _ (Left err) ->
-                            handle v1 (Invalid $ toException $ InvalidParse $ "invalid-done-parse: " ++ err)
-                        Fail _ _ err ->
-                            handle v1 (Invalid $ toException $ InvalidParse $ "invalid-parse: " ++ err)
-                StreamPushPromiseEvent {} ->
-                    handle v1 (Invalid $ toException UnallowedPushPromiseReceived)
-                StreamErrorEvent {} ->
-                    handle v1 (Invalid $ toException $ InvalidState "stream error")
+        getIncoming receivedHeaders gotTrailersVar decoderVar = do
+            gotTrailers <- liftIO $ readIORef gotTrailersVar
+            didReceive <- liftIO $ readIORef receivedHeaders
+            case (gotTrailers, didReceive) of
+                (True, _) -> return Nothing
+                (False, False) ->
+                    _waitEvent stream >>= \case
+                        StreamHeadersEvent _ hdrs -> do
+                            liftIO $ writeIORef receivedHeaders True
+                            return (Just (Headers hdrs))
+                        _ ->
+                            return (Just (Invalid $ toException $ InvalidState "no headers"))
+                (False, True) ->
+                    _waitEvent stream >>= \case
+                        StreamHeadersEvent _ hdrs -> do
+                            liftIO $ writeIORef gotTrailersVar True
+                            return (Just (Trailers hdrs))
+                        StreamDataEvent _ dat -> do
+                            liftIO $ _addCredit isfc (ByteString.length dat)
+                            _ <- liftIO $ _consumeCredit isfc (ByteString.length dat)
+                            _ <- _updateWindow isfc
+                            decode <- liftIO $ readIORef decoderVar
+                            case pushChunk decode dat of
+                                Done unusedDat _ (Right val) -> do
+                                    liftIO $ writeIORef decoderVar (pushChunk newDecoder unusedDat)
+                                    return (Just (RecvMessage val))
+                                partial@(Partial _) -> do
+                                    liftIO $ writeIORef decoderVar partial
+                                    getIncoming receivedHeaders gotTrailersVar decoderVar
+                                Done _ _ (Left err) -> do
+                                    liftIO $ writeIORef gotTrailersVar True
+                                    return (Just (Invalid $ toException $ InvalidParse $ "invalid-done-parse: " ++ err))
+                                Fail _ _ err -> do
+                                    liftIO $ writeIORef gotTrailersVar True
+                                    return (Just (Invalid $ toException $ InvalidParse $ "invalid-parse: " ++ err))
+                        StreamPushPromiseEvent {} -> do
+                            liftIO $ writeIORef gotTrailersVar True
+                            return (Just (Invalid $ toException UnallowedPushPromiseReceived))
+                        StreamErrorEvent {} -> do
+                            liftIO $ writeIORef gotTrailersVar True
+                            return (Just (Invalid $ toException $ InvalidState "stream error"))

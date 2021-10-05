@@ -9,6 +9,8 @@ module Network.GRPC.Server.Handlers (
 , bidiStream
 , H.GeneralStreamHandler, H.IncomingStream(..), H.OutgoingStream(..)
 , generalStream
+, H.ExplicitStreamHandler
+, explicitStream
 ) where
 
 import           Network.GRPC.HTTP2.Encoding
@@ -49,3 +51,10 @@ generalStream
   -> H.GeneralStreamHandler IO i o a b
   -> ServiceHandler
 generalStream = H.generalStream id
+
+explicitStream
+  :: (GRPCInput r i, GRPCOutput r o)
+  => r
+  -> H.ExplicitStreamHandler IO i o
+  -> ServiceHandler
+explicitStream = H.explicitStream id

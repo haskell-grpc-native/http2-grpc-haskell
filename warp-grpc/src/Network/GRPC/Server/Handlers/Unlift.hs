@@ -9,6 +9,8 @@ module Network.GRPC.Server.Handlers.Unlift (
 , bidiStream
 , H.GeneralStreamHandler, H.IncomingStream(..), H.OutgoingStream(..)
 , generalStream
+, H.ExplicitStreamHandler
+, explicitStream
 ) where
 
 import           Control.Monad.IO.Unlift
@@ -55,3 +57,11 @@ generalStream
   -> m ServiceHandler
 generalStream rpc handler
   = withRunInIO (\f -> return $ H.generalStream f rpc handler)
+
+explicitStream
+  :: (MonadUnliftIO m, GRPCInput r i, GRPCOutput r o)
+  => r
+  -> H.ExplicitStreamHandler m i o
+  -> m ServiceHandler
+explicitStream rpc handler
+  = withRunInIO (\f -> return $ H.explicitStream f rpc handler)

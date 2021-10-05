@@ -28,6 +28,7 @@ import Data.Monoid ((<>))
 #endif
 
 import Network.GRPC.Server.Wai (WaiHandler, ServiceHandler(..), closeEarly)
+import Data.IORef
 
 #if !MIN_VERSION_wai(3,2,2)
 getRequestBodyChunk :: Request -> IO ByteString
@@ -135,6 +136,15 @@ generalStream
   -> ServiceHandler
 generalStream f rpc handler =
     ServiceHandler (path rpc) (handleGeneralStream f rpc handler)
+
+explicitStream
+  :: (MonadIO m, GRPCInput r i, GRPCOutput r o)
+  => (forall x. m x -> IO x)
+  -> r
+  -> ExplicitStreamHandler m i o
+  -> ServiceHandler
+explicitStream f rpc handler =
+    ServiceHandler (path rpc) (handleExplicitStream f rpc handler)
 
 -- | Handle unary RPCs.
 handleUnary
@@ -281,6 +291,31 @@ handleGeneralStream f rpc handler0 decoding encoding req write flush = void $
         let handleEof = incomingStreamFinalizer cstream v0 >> pure v0
         handleRequestChunksLoop decode handleMsg handleEof nextChunk
 
+type ExplicitStreamHandler m i o =
+    Request -> m (Maybe i) -> (o -> m ()) -> m ()
+
+handleExplicitStream
+  :: forall m r i o.
+     (MonadIO m, GRPCInput r i, GRPCOutput r o)
+  => (forall x. m x -> IO x)
+  -> r
+  -> ExplicitStreamHandler m i o
+  -> WaiHandler
+handleExplicitStream f rpc handler0 decoding encoding req write flush = do
+    currentDecoderVar <- newIORef newDecoder
+    f $ handler0 req (liftIO $ getNextMsg currentDecoderVar) (liftIO . reply)
+  where
+    newDecoder = decodeInput rpc $ _getDecodingCompression decoding
+    nextChunk = getRequestBodyChunk req
+    reply msg = write (encodeOutput rpc (_getEncodingCompression encoding) msg) >> flush
+
+    getNextMsg :: IORef (Decoder (Either String i)) -> IO (Maybe i)
+    getNextMsg currentDecoderVar = do
+      currentDecoder <- readIORef currentDecoderVar
+      let handleMsg dat msg = do
+            writeIORef currentDecoderVar $! pushChunk newDecoder dat
+            return (Just msg)
+      handleRequestChunksLoop currentDecoder handleMsg (return Nothing) nextChunk
 
 -- | Helpers to consume input in chunks.
 handleRequestChunksLoop
