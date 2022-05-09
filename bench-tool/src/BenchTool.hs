@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE PackageImports #-}
 module BenchTool where
 
 
@@ -18,7 +19,7 @@ import Network.GRPC.HTTP2.Encoding as Encoding
 
 -- client
 import Network.GRPC.Client (open, singleRequest, streamReply, streamRequest, Timeout(..), StreamDone(..), CompressMode(..))
-import qualified Network.HTTP2.Client as Client
+import qualified "http2-client" Network.HTTP2.Client as Client
 import qualified Network.GRPC.Client.Helpers as Client
 
 -- server
