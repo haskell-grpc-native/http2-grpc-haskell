@@ -10,4 +10,4 @@ packages:
 extra-deps:
 - proto3-wire-1.2.2
 - git: https://github.com/Concordium/http2-client.git
-  commit: d853c330b25fcb4724b2fe46f98c8d18560010a1
+  commit: 87c4306a624ff490ac9bd92e075ff09f14c341f4
