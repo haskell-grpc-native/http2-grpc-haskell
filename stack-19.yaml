@@ -1,0 +1,13 @@
+resolver: lts-19.6
+allow-newer: true
+packages:
+- http2-grpc-types
+- http2-grpc-proto-lens
+- http2-grpc-proto3-wire
+- warp-grpc
+- http2-client-grpc
+- bench-tool
+extra-deps:
+- proto3-wire-1.2.2
+- git: https://github.com/Concordium/http2-client.git
+  commit: 87c4306a624ff490ac9bd92e075ff09f14c341f4

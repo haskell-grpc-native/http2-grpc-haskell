@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.6.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3e8de76afd2731e91b6482e417c20c427aab6ea11675e4a6fd9acc874a760d82
+-- hash: e2c0b94f518b929cef4b5d01f972bc4e25cde9360b6bcc532730e62dea7187a5
 
 name:           bench-tool
 version:        0.4.0.1
@@ -43,13 +43,13 @@ library
     , bytestring >=0.10.8 && <0.11
     , case-insensitive >=1.2.0 && <1.3
     , containers
-    , http-types >=0.12 && <0.13
+    , http-types ==0.12.*
     , http2 >=1.6 && <3
     , http2-client
     , http2-client-grpc
     , http2-grpc-proto-lens
     , http2-grpc-proto3-wire
-    , http2-grpc-types >=0.5 && <0.6
+    , http2-grpc-types ==0.5.*
     , lifted-async
     , lifted-base
     , microlens
@@ -79,13 +79,13 @@ executable bench-tool-exe
     , bytestring >=0.10.8 && <0.11
     , case-insensitive >=1.2.0 && <1.3
     , containers
-    , http-types >=0.12 && <0.13
+    , http-types ==0.12.*
     , http2 >=1.6 && <3
     , http2-client
     , http2-client-grpc
     , http2-grpc-proto-lens
     , http2-grpc-proto3-wire
-    , http2-grpc-types >=0.5 && <0.6
+    , http2-grpc-types ==0.5.*
     , lifted-async
     , lifted-base
     , microlens
