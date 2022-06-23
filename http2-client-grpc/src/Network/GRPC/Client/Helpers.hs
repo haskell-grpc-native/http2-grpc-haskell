@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE PackageImports    #-}
 {-# LANGUAGE CPP               #-}
 
 -- | Set of helpers helping with writing gRPC clients with not much exposure of
@@ -32,9 +33,9 @@ import Network.HPACK (HeaderList)
 import Data.Monoid ((<>))
 #endif
 
-import Network.HTTP2.Client (frameHttp2RawConnection, ClientIO, ClientError, newHttp2FrameConnection, newHttp2Client, Http2Client(..), IncomingFlowControl(..), GoAwayHandler, FallBackFrameHandler, ignoreFallbackHandler, HostName, PortNumber, TooMuchConcurrency)
-import Network.HTTP2.Client.Helpers (ping)
-import Network.HTTP2.Client.RawConnection (newRawHttp2ConnectionSocket, newRawHttp2ConnectionUnix)
+import "http2-client" Network.HTTP2.Client (frameHttp2RawConnection, ClientIO, ClientError, newHttp2FrameConnection, newHttp2Client, Http2Client(..), IncomingFlowControl(..), GoAwayHandler, FallBackFrameHandler, ignoreFallbackHandler, HostName, PortNumber, TooMuchConcurrency)
+import "http2-client" Network.HTTP2.Client.Helpers (ping)
+import "http2-client" Network.HTTP2.Client.RawConnection (newRawHttp2ConnectionSocket, newRawHttp2ConnectionUnix)
 import Network.GRPC.Client
 import Network.GRPC.HTTP2.Encoding
 import qualified Network.Socket as Network
@@ -234,11 +235,11 @@ rawGeneralStream
   -- ^ An initialized client.
   -> a
   -- ^ An initial state for the incoming loop.
-  -> (a -> IncomingEvent o a -> ClientIO a)
+  -> (a -> IncomingEvent o -> ClientIO a)
   -- ^ A state-passing function for the incoming loop.
   -> b
   -- ^ An initial state for the outgoing loop.
-  -> (b -> ClientIO (b, OutgoingEvent i b))
+  -> (b -> ClientIO (b, OutgoingEvent i))
   -- ^ A state-passing function for the ougoing loop.
   -> ClientIO (Either TooMuchConcurrency (a,b))
 rawGeneralStream rpc (GrpcClient client authority headers timeout compression _) v0 handler w0 next =
