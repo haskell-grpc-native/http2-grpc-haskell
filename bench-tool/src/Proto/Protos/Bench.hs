@@ -173,8 +173,7 @@ instance Data.ProtoLens.Message BenchObject where
                                   (Prelude.show (missing :: [Prelude.String]))))
                       Prelude.return
                         (Lens.Family2.over
-                           Data.ProtoLens.unknownFields
-                           (\ !t -> Prelude.reverse t)
+                           Data.ProtoLens.unknownFields (\ !t -> Prelude.reverse t)
                            (Lens.Family2.set
                               (Data.ProtoLens.Field.field @"vec'strings") frozen'strings x))
                else
@@ -234,8 +233,7 @@ instance Data.ProtoLens.Message BenchObject where
                                    (Data.ProtoLens.Encoding.Bytes.putVarInt
                                       (Prelude.fromIntegral (Data.ByteString.length bs)))
                                    (Data.ProtoLens.Encoding.Bytes.putBytes bs))
-                           Data.ProtoLens.encodeMessage
-                           _v))
+                           Data.ProtoLens.encodeMessage _v))
                 (Lens.Family2.view (Data.ProtoLens.Field.field @"vec'strings") _x))
              ((Data.Monoid.<>)
                 (case
@@ -251,8 +249,7 @@ instance Data.ProtoLens.Message BenchObject where
                                      (Data.ProtoLens.Encoding.Bytes.putVarInt
                                         (Prelude.fromIntegral (Data.ByteString.length bs)))
                                      (Data.ProtoLens.Encoding.Bytes.putBytes bs))
-                             Data.ProtoLens.encodeMessage
-                             _v))
+                             Data.ProtoLens.encodeMessage _v))
                 ((Data.Monoid.<>)
                    (case
                         Lens.Family2.view (Data.ProtoLens.Field.field @"maybe'req") _x
@@ -267,8 +264,7 @@ instance Data.ProtoLens.Message BenchObject where
                                         (Data.ProtoLens.Encoding.Bytes.putVarInt
                                            (Prelude.fromIntegral (Data.ByteString.length bs)))
                                         (Data.ProtoLens.Encoding.Bytes.putBytes bs))
-                                Data.ProtoLens.encodeMessage
-                                _v))
+                                Data.ProtoLens.encodeMessage _v))
                    (Data.ProtoLens.Encoding.Wire.buildFieldSet
                       (Lens.Family2.view Data.ProtoLens.unknownFields _x))))
 instance Control.DeepSeq.NFData BenchObject where
@@ -609,8 +605,7 @@ instance Data.ProtoLens.Message BenchObject'StringContent where
                                  (Data.ProtoLens.Encoding.Bytes.putVarInt
                                     (Prelude.fromIntegral (Data.ByteString.length bs)))
                                  (Data.ProtoLens.Encoding.Bytes.putBytes bs))
-                         Data.Text.Encoding.encodeUtf8
-                         _v))
+                         Data.Text.Encoding.encodeUtf8 _v))
              (Data.ProtoLens.Encoding.Wire.buildFieldSet
                 (Lens.Family2.view Data.ProtoLens.unknownFields _x))
 instance Control.DeepSeq.NFData BenchObject'StringContent where
@@ -627,6 +622,13 @@ instance Data.ProtoLens.Service.Types.Service Bench where
   type ServiceMethods Bench = '["clientStreamQuery",
                                 "serverStreamQuery",
                                 "unaryQuery"]
+  packedServiceDescriptor _
+    = "\n\
+      \\ENQBench\DC26\n\
+      \\n\
+      \UnaryQuery\DC2\DC2.bench.BenchObject\SUB\DC2.bench.BenchObject\"\NUL\DC2?\n\
+      \\DC1ServerStreamQuery\DC2\DC2.bench.BenchObject\SUB\DC2.bench.BenchObject\"\NUL0\SOH\DC2?\n\
+      \\DC1ClientStreamQuery\DC2\DC2.bench.BenchObject\SUB\DC2.bench.BenchObject\"\NUL(\SOH"
 instance Data.ProtoLens.Service.Types.HasMethodImpl Bench "unaryQuery" where
   type MethodName Bench "unaryQuery" = "UnaryQuery"
   type MethodInput Bench "unaryQuery" = BenchObject
@@ -662,12 +664,12 @@ packedFileDescriptor
     \\n\
     \UnaryQuery\DC2\DC2.bench.BenchObject\SUB\DC2.bench.BenchObject\"\NUL\DC2?\n\
     \\DC1ServerStreamQuery\DC2\DC2.bench.BenchObject\SUB\DC2.bench.BenchObject\"\NUL0\SOH\DC2?\n\
-    \\DC1ClientStreamQuery\DC2\DC2.bench.BenchObject\SUB\DC2.bench.BenchObject\"\NUL(\SOHJ\162\ACK\n\
+    \\DC1ClientStreamQuery\DC2\DC2.bench.BenchObject\SUB\DC2.bench.BenchObject\"\NUL(\SOHJ\209\ENQ\n\
     \\ACK\DC2\EOT\NUL\NUL\ETB\SOH\n\
     \\b\n\
     \\SOH\f\DC2\ETX\NUL\NUL\DC2\n\
     \\b\n\
-    \\SOH\STX\DC2\ETX\STX\b\r\n\
+    \\SOH\STX\DC2\ETX\STX\NUL\SO\n\
     \\n\
     \\n\
     \\STX\ACK\NUL\DC2\EOT\EOT\NUL\b\SOH\n\
@@ -717,8 +719,6 @@ packedFileDescriptor
     \\ETB\n\
     \\r\n\
     \\ACK\EOT\NUL\ETX\NUL\STX\NUL\DC2\ETX\f\EOT\ETB\n\
-    \\SI\n\
-    \\a\EOT\NUL\ETX\NUL\STX\NUL\EOT\DC2\EOT\f\EOT\v\EM\n\
     \\SO\n\
     \\a\EOT\NUL\ETX\NUL\STX\NUL\ENQ\DC2\ETX\f\EOT\n\
     \\n\
@@ -733,8 +733,6 @@ packedFileDescriptor
     \\SI\n\
     \\r\n\
     \\ACK\EOT\NUL\ETX\SOH\STX\NUL\DC2\ETX\SI\EOT\DC4\n\
-    \\SI\n\
-    \\a\EOT\NUL\ETX\SOH\STX\NUL\EOT\DC2\EOT\SI\EOT\SO\DC1\n\
     \\SO\n\
     \\a\EOT\NUL\ETX\SOH\STX\NUL\ENQ\DC2\ETX\SI\EOT\t\n\
     \\SO\n\
@@ -749,8 +747,6 @@ packedFileDescriptor
     \\r\n\
     \\r\n\
     \\ACK\EOT\NUL\ETX\STX\STX\NUL\DC2\ETX\DC2\EOT\EM\n\
-    \\SI\n\
-    \\a\EOT\NUL\ETX\STX\STX\NUL\EOT\DC2\EOT\DC2\EOT\DC1\SI\n\
     \\SO\n\
     \\a\EOT\NUL\ETX\STX\STX\NUL\ENQ\DC2\ETX\DC2\EOT\t\n\
     \\SO\n\
@@ -771,8 +767,6 @@ packedFileDescriptor
     \\ENQ\EOT\NUL\STX\NUL\ETX\DC2\ETX\DC4#$\n\
     \\v\n\
     \\EOT\EOT\NUL\STX\SOH\DC2\ETX\NAK\STX\DC2\n\
-    \\r\n\
-    \\ENQ\EOT\NUL\STX\SOH\EOT\DC2\EOT\NAK\STX\DC4%\n\
     \\f\n\
     \\ENQ\EOT\NUL\STX\SOH\ACK\DC2\ETX\NAK\STX\a\n\
     \\f\n\
@@ -781,8 +775,6 @@ packedFileDescriptor
     \\ENQ\EOT\NUL\STX\SOH\ETX\DC2\ETX\NAK\DLE\DC1\n\
     \\v\n\
     \\EOT\EOT\NUL\STX\STX\DC2\ETX\SYN\STX\SO\n\
-    \\r\n\
-    \\ENQ\EOT\NUL\STX\STX\EOT\DC2\EOT\SYN\STX\NAK\DC2\n\
     \\f\n\
     \\ENQ\EOT\NUL\STX\STX\ACK\DC2\ETX\SYN\STX\ENQ\n\
     \\f\n\

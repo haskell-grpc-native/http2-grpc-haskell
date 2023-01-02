@@ -16,6 +16,7 @@ import           Data.ProtoLens.Message (Message)
 import           Data.ProtoLens.Service.Types (Service(..), HasMethod, HasMethodImpl(..))
 import           Data.Proxy (Proxy(..))
 import           GHC.TypeLits (Symbol, symbolVal)
+import           Data.Kind
 
 #if MIN_VERSION_base(4,11,0)
 #else
@@ -26,7 +27,7 @@ import Network.GRPC.HTTP2.Types
 import Network.GRPC.HTTP2.Encoding
 
 -- | A proxy type for giving static information about RPCs.
-data RPC (s :: *) (m :: Symbol) = RPC
+data RPC (s :: Type) (m :: Symbol) = RPC
 
 instance (Service s, HasMethod s m) => IsRPC (RPC s m) where
   path rpc = "/" <> pkg rpc Proxy <> "." <> srv rpc Proxy <> "/" <> meth rpc Proxy

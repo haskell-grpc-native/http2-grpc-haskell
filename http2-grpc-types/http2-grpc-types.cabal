@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d6b648c1e4df6998a88b402927190c2ea0d5ee85a34c705a89096e0f1b6ab308
+-- hash: d9fb612c6f830d394ae0d81228fd2a7f516ae9c08c9dc597501443917add817e
 
 name:           http2-grpc-types
 version:        0.5.0.0
@@ -39,7 +39,7 @@ library
   build-depends:
       base >=4.10 && <5
     , binary >=0.8.5 && <0.11
-    , bytestring >=0.10.8 && <0.11
+    , bytestring >=0.10.8 && <0.11.4
     , case-insensitive >=1.2.0 && <1.3
     , zlib >=0.6.2 && <0.7
   default-language: Haskell2010
