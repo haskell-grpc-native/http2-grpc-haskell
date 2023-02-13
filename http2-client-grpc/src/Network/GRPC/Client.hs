@@ -232,6 +232,7 @@ streamReply rpc v0 req handler = RPCCall rpc $ \conn stream isfc osfc encoding d
                 liftIO $ _addCredit isfc (ByteString.length dat)
                 _ <- liftIO $ _consumeCredit isfc (ByteString.length dat)
                 _ <- _updateWindow isfc
+                _ <- _updateWindow (_incomingFlowControl conn)
                 handleAllChunks decoding v1 hdrs decode dat loop
     } in do
         let ocfc = _outgoingFlowControl conn
