@@ -239,8 +239,15 @@ streamReply rpc v0 req handler = RPCCall rpc $ \conn stream isfc osfc encoding d
         let decompress = _getDecodingCompression decoding
         sendSingleMessage rpc req encoding setEndStream conn ocfc stream osfc
         _waitEvent stream >>= \case
-            StreamHeadersEvent _ hdrs ->
-                loop v0 (decodeOutput rpc decompress) hdrs
+            StreamHeadersEvent frHeaders hdrs ->
+                   -- In case the response is an immediate error, there will typically
+                   -- not be any additional data, so we cannot ender the loop above,
+                   -- since that will not receive any additional events. So we terminate early.
+                   if testEndStream (flags frHeaders) then
+                     -- In this scenario there are only trailers, we only received that frame.
+                     return (v0, [], hdrs)
+                   else
+                     loop v0 (decodeOutput rpc decompress) hdrs
             _                         ->
                 lift $ throwIO (InvalidState "no headers")
   where
