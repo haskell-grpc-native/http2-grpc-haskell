@@ -4,6 +4,9 @@
 
 - Support connecting to unix sockets and already connected sockets. [#44](https://github.com/haskell-grpc-native/http2-grpc-haskell/pull/44)
 - Make `waitReply` not rely on the background thread. Decreases latency of `rawUnary` and related queries..
+- Fix a bug where a streaming call which failed immediately would lead to a
+  hanging request.
+
 
 ## 0.8.0.0
 
