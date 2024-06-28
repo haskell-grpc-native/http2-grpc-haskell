@@ -109,8 +109,12 @@ tlsSettings True host port = Just $ TLS.ClientParams {
                                                }
         , TLS.clientSupported            = def { TLS.supportedCiphers = TLS.ciphersuite_default }
         , TLS.clientDebug                = def
+#if MIN_VERSION_tls(2,0,0)
+        , TLS.clientUseEarlyData         = False
+#else
 #if MIN_VERSION_tls(1,5,0)
         , TLS.clientEarlyData            = Nothing
+#endif
 #endif
         }
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
@@ -101,6 +102,9 @@ import "http2-client" Network.HTTP2.Client hiding (next)
 import Network.HTTP2.Client.Helpers
 
 type CIHeaderList = [(CI ByteString, ByteString)]
+#if MIN_VERSION_http2(5,2,0)
+type HeaderList = [(ByteString, ByteString)]
+#endif
 
 -- | A reply.
 --
